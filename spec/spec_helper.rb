@@ -25,8 +25,8 @@ RSpec.configure do |config|
   config.include PunditSpecHelper
 end
 
-class PostPolicy < Struct.new(:user, :post)
-  class Scope < Struct.new(:user, :scope)
+class PostPolicy < Struct.new(:user, :post, :options)
+  class Scope < Struct.new(:user, :scope, :options)
     def resolve
       scope.published
     end
@@ -102,16 +102,16 @@ class CommentScope
   end
 end
 
-class CommentPolicy < Struct.new(:user, :comment)
-  class Scope < Struct.new(:user, :scope)
+class CommentPolicy < Struct.new(:user, :comment, :options)
+  class Scope < Struct.new(:user, :scope, :options)
     def resolve
       CommentScope.new(scope)
     end
   end
 end
 
-class PublicationPolicy < Struct.new(:user, :publication)
-  class Scope < Struct.new(:user, :scope)
+class PublicationPolicy < Struct.new(:user, :publication, :options)
+  class Scope < Struct.new(:user, :scope, :options)
     def resolve
       scope.published
     end
@@ -142,7 +142,7 @@ end
 
 class Article; end
 
-class BlogPolicy < Struct.new(:user, :blog); end
+class BlogPolicy < Struct.new(:user, :blog, :options); end
 
 class Blog; end
 
@@ -152,7 +152,7 @@ class ArtificialBlog < Blog
   end
 end
 
-class ArticleTagOtherNamePolicy < Struct.new(:user, :tag)
+class ArticleTagOtherNamePolicy < Struct.new(:user, :tag, :options)
   def show?
     true
   end
@@ -168,21 +168,21 @@ class ArticleTag
   end
 end
 
-class CriteriaPolicy < Struct.new(:user, :criteria); end
+class CriteriaPolicy < Struct.new(:user, :criteria, :options); end
 
 module Project
-  class CommentPolicy < Struct.new(:user, :comment)
-    class Scope < Struct.new(:user, :scope)
+  class CommentPolicy < Struct.new(:user, :comment, :options)
+    class Scope < Struct.new(:user, :scope, :options)
       def resolve
         scope
       end
     end
   end
 
-  class CriteriaPolicy < Struct.new(:user, :criteria); end
+  class CriteriaPolicy < Struct.new(:user, :criteria, :options); end
 
-  class PostPolicy < Struct.new(:user, :post)
-    class Scope < Struct.new(:user, :scope)
+  class PostPolicy < Struct.new(:user, :post, :options)
+    class Scope < Struct.new(:user, :scope, :options)
       def resolve
         scope.read
       end
@@ -190,7 +190,7 @@ module Project
   end
 end
 
-class DenierPolicy < Struct.new(:user, :record)
+class DenierPolicy < Struct.new(:user, :record, :options)
   def update?
     false
   end
@@ -212,7 +212,7 @@ class Controller
   end
 end
 
-class NilClassPolicy < Struct.new(:user, :record)
+class NilClassPolicy < Struct.new(:user, :record, :options)
   class Scope
     def initialize(*)
       raise Pundit::NotDefinedError, "Cannot scope NilClass"
@@ -239,8 +239,8 @@ end
 class Thread
   def self.all; end
 end
-class ThreadPolicy < Struct.new(:user, :thread)
-  class Scope < Struct.new(:user, :scope)
+class ThreadPolicy < Struct.new(:user, :thread, :options)
+  class Scope < Struct.new(:user, :scope, :options)
     def resolve
       # deliberate wrong useage of the method
       scope.all(:unvalid, :parameters)
@@ -253,17 +253,17 @@ class PostFourFiveSix < Struct.new(:user); end
 class CommentFourFiveSix; extend ActiveModel::Naming; end
 
 module ProjectOneTwoThree
-  class CommentFourFiveSixPolicy < Struct.new(:user, :post); end
+  class CommentFourFiveSixPolicy < Struct.new(:user, :post, :options); end
 
-  class CriteriaFourFiveSixPolicy < Struct.new(:user, :criteria); end
+  class CriteriaFourFiveSixPolicy < Struct.new(:user, :criteria, :options); end
 
-  class PostFourFiveSixPolicy < Struct.new(:user, :post); end
+  class PostFourFiveSixPolicy < Struct.new(:user, :post, :options); end
 
   class TagFourFiveSix < Struct.new(:user); end
 
-  class TagFourFiveSixPolicy < Struct.new(:user, :tag); end
+  class TagFourFiveSixPolicy < Struct.new(:user, :tag, :options); end
 
   class AvatarFourFiveSix; extend ActiveModel::Naming; end
 
-  class AvatarFourFiveSixPolicy < Struct.new(:user, :avatar); end
+  class AvatarFourFiveSixPolicy < Struct.new(:user, :avatar, :options); end
 end

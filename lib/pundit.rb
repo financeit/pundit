@@ -64,8 +64,8 @@ module Pundit
     # @param policy_class [Class] the policy class we want to force use of
     # @raise [NotAuthorizedError] if the given query method returned false
     # @return [Object] Always returns the passed object record
-    def authorize(user, record, query, policy_class: nil)
-      policy = policy_class ? policy_class.new(user, record) : policy!(user, record)
+    def authorize(user, record, query, policy_class: nil, options: {})
+      policy = policy_class ? policy_class.new(user, record, options: options) : policy!(user, record, options: options)
 
       raise NotAuthorizedError, query: query, record: record, policy: policy unless policy.public_send(query)
 
@@ -79,12 +79,12 @@ module Pundit
     # @param scope [Object] the object we're retrieving the policy scope for
     # @raise [InvalidConstructorError] if the policy constructor called incorrectly
     # @return [Scope{#resolve}, nil] instance of scope class which can resolve to a scope
-    def policy_scope(user, scope)
+    def policy_scope(user, scope, options: {})
       policy_scope_class = PolicyFinder.new(scope).scope
       return unless policy_scope_class
 
       begin
-        policy_scope = policy_scope_class.new(user, pundit_model(scope))
+        policy_scope = policy_scope_class.new(user, pundit_model(scope), options: options)
       rescue ArgumentError
         raise InvalidConstructorError, "Invalid #<#{policy_scope_class}> constructor is called"
       end
@@ -100,12 +100,12 @@ module Pundit
     # @raise [NotDefinedError] if the policy scope cannot be found
     # @raise [InvalidConstructorError] if the policy constructor called incorrectly
     # @return [Scope{#resolve}] instance of scope class which can resolve to a scope
-    def policy_scope!(user, scope)
+    def policy_scope!(user, scope, options: {})
       policy_scope_class = PolicyFinder.new(scope).scope!
       return unless policy_scope_class
 
       begin
-        policy_scope = policy_scope_class.new(user, pundit_model(scope))
+        policy_scope = policy_scope_class.new(user, pundit_model(scope), options: options)
       rescue ArgumentError
         raise InvalidConstructorError, "Invalid #<#{policy_scope_class}> constructor is called"
       end
@@ -120,9 +120,9 @@ module Pundit
     # @param record [Object] the object we're retrieving the policy for
     # @raise [InvalidConstructorError] if the policy constructor called incorrectly
     # @return [Object, nil] instance of policy class with query methods
-    def policy(user, record)
+    def policy(user, record, options: {})
       policy = PolicyFinder.new(record).policy
-      policy.new(user, pundit_model(record)) if policy
+      policy.new(user, pundit_model(record), options: options) if policy
     rescue ArgumentError
       raise InvalidConstructorError, "Invalid #<#{policy}> constructor is called"
     end
@@ -135,9 +135,9 @@ module Pundit
     # @raise [NotDefinedError] if the policy cannot be found
     # @raise [InvalidConstructorError] if the policy constructor called incorrectly
     # @return [Object] instance of policy class with query methods
-    def policy!(user, record)
+    def policy!(user, record, options: {})
       policy = PolicyFinder.new(record).policy!
-      policy.new(user, pundit_model(record))
+      policy.new(user, pundit_model(record), options: options)
     rescue ArgumentError
       raise InvalidConstructorError, "Invalid #<#{policy}> constructor is called"
     end
@@ -151,8 +151,8 @@ module Pundit
 
   # @api private
   module Helper
-    def policy_scope(scope)
-      pundit_policy_scope(scope)
+    def policy_scope(scope, options: {})
+      pundit_policy_scope(scope, options: options)
     end
   end
 
@@ -211,12 +211,12 @@ protected
   # @param policy_class [Class] the policy class we want to force use of
   # @raise [NotAuthorizedError] if the given query method returned false
   # @return [Object] Always returns the passed object record
-  def authorize(record, query = nil, policy_class: nil)
+  def authorize(record, query = nil, policy_class: nil, options: {})
     query ||= "#{action_name}?"
 
     @_pundit_policy_authorized = true
 
-    policy = policy_class ? policy_class.new(pundit_user, record) : policy(record)
+    policy = policy_class ? policy_class.new(pundit_user, record, options: options) : policy(record, options: options)
 
     raise NotAuthorizedError, query: query, record: record, policy: policy unless policy.public_send(query)
 
@@ -245,9 +245,9 @@ protected
   # @param scope [Object] the object we're retrieving the policy scope for
   # @param policy_scope_class [Class] the policy scope class we want to force use of
   # @return [Scope{#resolve}, nil] instance of scope class which can resolve to a scope
-  def policy_scope(scope, policy_scope_class: nil)
+  def policy_scope(scope, policy_scope_class: nil, options: {})
     @_pundit_policy_scoped = true
-    policy_scope_class ? policy_scope_class.new(pundit_user, scope).resolve : pundit_policy_scope(scope)
+    policy_scope_class ? policy_scope_class.new(pundit_user, scope, options: options).resolve : pundit_policy_scope(scope, options: options)
   end
 
   # Retrieves the policy for the given record.
@@ -255,8 +255,8 @@ protected
   # @see https://github.com/varvet/pundit#policies
   # @param record [Object] the object we're retrieving the policy for
   # @return [Object, nil] instance of policy class with query methods
-  def policy(record)
-    policies[record] ||= Pundit.policy!(pundit_user, record)
+  def policy(record, options: {})
+    policies[record] ||= Pundit.policy!(pundit_user, record, options: options)
   end
 
   # Retrieves a set of permitted attributes from the policy by instantiating
@@ -317,7 +317,7 @@ protected
 
 private
 
-  def pundit_policy_scope(scope)
-    policy_scopes[scope] ||= Pundit.policy_scope!(pundit_user, scope)
+  def pundit_policy_scope(scope, options: {})
+    policy_scopes[scope] ||= Pundit.policy_scope!(pundit_user, scope, options: options)
   end
 end
